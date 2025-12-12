@@ -104,11 +104,12 @@ public class UploadCompletionService {
       filename = "unknown";
     }
 
-    // TUS 메타데이터에서 courseId, weekId, title 추출
+    // TUS 메타데이터에서 courseId, weekId, title, duration 추출
     Map<String, String> metadata = uploadInfo.getMetadata();
     Long courseId = extractLongMetadata(metadata, "courseId");
     Long weekId = extractLongMetadata(metadata, "weekId");
     String title = extractStringMetadata(metadata, "title", filename);
+    String duration = extractStringMetadata(metadata, "duration", null);
 
     VideoUpload upload = VideoUpload.create(
         tusUploadId,
@@ -120,10 +121,13 @@ public class UploadCompletionService {
         weekId,
         title
     );
+    if (duration != null) {
+      upload.setDuration(duration);
+    }
 
     uploadRepository.save(upload);
-    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}, courseId={}, weekId={}, title={}",
-        tusUploadId, filename, courseId, weekId, title);
+    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}, courseId={}, weekId={}, title={}, duration={}",
+        tusUploadId, filename, courseId, weekId, title, duration);
   }
 
   /**

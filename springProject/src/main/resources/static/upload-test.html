@@ -38,6 +38,7 @@
   <div class="form-group">
     <label>Video File:</label>
     <input type="file" id="file" accept="video/*" />
+    <p id="durationDisplay" style="margin-top: 5px; color: #666;"></p>
   </div>
 
   <button onclick="startUpload()">Upload</button>
@@ -53,6 +54,26 @@
 
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js"></script>
   <script>
+    let videoDuration = '';
+
+    // 파일 선택 시 동영상 길이 추출
+    document.getElementById('file').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(video.src);
+        const seconds = Math.floor(video.duration);
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        videoDuration = `${minutes}:${secs.toString().padStart(2, '0')}`;
+        document.getElementById('durationDisplay').textContent = `Duration: ${videoDuration}`;
+      };
+      video.src = URL.createObjectURL(file);
+    });
+
     function log(message) {
       const logDiv = document.getElementById('log');
       const time = new Date().toLocaleTimeString();
@@ -73,7 +94,7 @@
       }
 
       const file = fileInput.files[0];
-      log(`Starting upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+      log(`Starting upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB), Duration: ${videoDuration}`);
 
       document.getElementById('progress').style.display = 'block';
 
@@ -86,7 +107,8 @@
           filetype: file.type,
           courseId: courseId,
           weekId: weekId,
-          title: title
+          title: title,
+          duration: videoDuration
         },
         onError: function(error) {
           log(`ERROR: ${error}`);
