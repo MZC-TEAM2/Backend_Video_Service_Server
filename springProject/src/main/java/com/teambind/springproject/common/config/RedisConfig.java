@@ -1,5 +1,8 @@
 package com.teambind.springproject.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -31,9 +34,17 @@ public class RedisConfig {
     template.setKeySerializer(new StringRedisSerializer());
     template.setHashKeySerializer(new StringRedisSerializer());
 
-    // Value는 JSON 직렬화
+    // Value는 JSON 직렬화 (Java 8 날짜/시간 지원)
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    objectMapper.activateDefaultTyping(
+        objectMapper.getPolymorphicTypeValidator(),
+        ObjectMapper.DefaultTyping.NON_FINAL
+    );
+
     GenericJackson2JsonRedisSerializer jsonSerializer =
-        new GenericJackson2JsonRedisSerializer();
+        new GenericJackson2JsonRedisSerializer(objectMapper);
     template.setValueSerializer(jsonSerializer);
     template.setHashValueSerializer(jsonSerializer);
 
