@@ -1,13 +1,15 @@
 package com.teambind.springproject.domain.upload.service;
 
+import com.teambind.springproject.domain.content.entity.WeekContent;
+import com.teambind.springproject.domain.content.repository.WeekContentRepository;
 import com.teambind.springproject.domain.upload.entity.VideoUpload;
 import com.teambind.springproject.domain.upload.repository.VideoUploadRepository;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 import me.desair.tus.server.TusFileUploadService;
 import me.desair.tus.server.upload.UploadInfo;
@@ -27,16 +29,22 @@ public class UploadCompletionService {
 
   private final TusFileUploadService tusService;
   private final VideoUploadRepository uploadRepository;
+  private final WeekContentRepository weekContentRepository;
   private final String storagePath;
+  private final String baseUrl;
 
   public UploadCompletionService(
       final TusFileUploadService tusService,
       final VideoUploadRepository uploadRepository,
-      @Value("${video.upload.storage-path:/tmp/video-uploads}") final String storagePath
+      final WeekContentRepository weekContentRepository,
+      @Value("${video.upload.storage-path:/tmp/video-uploads}") final String storagePath,
+      @Value("${video.stream.base-url:}") final String baseUrl
   ) {
     this.tusService = tusService;
     this.uploadRepository = uploadRepository;
+    this.weekContentRepository = weekContentRepository;
     this.storagePath = storagePath;
+    this.baseUrl = baseUrl;
   }
 
   /**
@@ -59,7 +67,12 @@ public class UploadCompletionService {
 
       // DB 업데이트
       String tusUploadId = extractUploadId(uploadUri);
-      updateUploadRecord(tusUploadId, finalPath);
+      VideoUpload upload = updateUploadRecord(tusUploadId, finalPath);
+
+      // week_contents 테이블에 등록
+      if (upload != null && upload.getWeekId() != null) {
+        createWeekContent(upload);
+      }
 
       // TUS 임시 파일 정리
       tusService.deleteUpload(uploadUri);
@@ -91,16 +104,24 @@ public class UploadCompletionService {
       filename = "unknown";
     }
 
+    // TUS 메타데이터에서 weekId, title 추출
+    Map<String, String> metadata = uploadInfo.getMetadata();
+    Long weekId = extractLongMetadata(metadata, "weekId");
+    String title = extractStringMetadata(metadata, "title", filename);
+
     VideoUpload upload = VideoUpload.create(
         tusUploadId,
         userId,
         filename,
         uploadInfo.getLength(),
-        uploadInfo.getFileMimeType()
+        uploadInfo.getFileMimeType(),
+        weekId,
+        title
     );
 
     uploadRepository.save(upload);
-    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}", tusUploadId, filename);
+    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}, weekId={}, title={}",
+        tusUploadId, filename, weekId, title);
   }
 
   /**
@@ -144,12 +165,65 @@ public class UploadCompletionService {
     return targetPath.toString();
   }
 
-  private void updateUploadRecord(final String tusUploadId, final String storagePath) {
-    uploadRepository.findByTusUploadId(tusUploadId)
-        .ifPresent(upload -> {
+  private VideoUpload updateUploadRecord(final String tusUploadId, final String storagePath) {
+    return uploadRepository.findByTusUploadId(tusUploadId)
+        .map(upload -> {
           upload.complete(storagePath);
-          uploadRepository.save(upload);
-        });
+          return uploadRepository.save(upload);
+        })
+        .orElse(null);
+  }
+
+  private void createWeekContent(final VideoUpload upload) {
+    // 스트리밍 URL 생성
+    String contentUrl = buildStreamUrl(upload.getId());
+
+    // 표시 순서 계산
+    Integer maxOrder = weekContentRepository.findMaxDisplayOrderByWeekId(upload.getWeekId());
+    Integer displayOrder = maxOrder + 1;
+
+    // WeekContent 생성 및 저장
+    WeekContent weekContent = WeekContent.createVideo(
+        upload.getWeekId(),
+        upload.getTitle(),
+        contentUrl,
+        upload.getDuration(),
+        displayOrder
+    );
+
+    weekContentRepository.save(weekContent);
+    log.info("WeekContent 생성: weekId={}, title={}, contentUrl={}",
+        upload.getWeekId(), upload.getTitle(), contentUrl);
+  }
+
+  private String buildStreamUrl(final Long videoUploadId) {
+    if (baseUrl != null && !baseUrl.isEmpty()) {
+      return baseUrl + "/api/v1/videos/stream/" + videoUploadId;
+    }
+    return "/api/v1/videos/stream/" + videoUploadId;
+  }
+
+  private Long extractLongMetadata(final Map<String, String> metadata, final String key) {
+    if (metadata == null || !metadata.containsKey(key)) {
+      return null;
+    }
+    try {
+      return Long.parseLong(metadata.get(key));
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private String extractStringMetadata(
+      final Map<String, String> metadata,
+      final String key,
+      final String defaultValue
+  ) {
+    if (metadata == null || !metadata.containsKey(key)) {
+      return defaultValue;
+    }
+    String value = metadata.get(key);
+    return (value != null && !value.isEmpty()) ? value : defaultValue;
   }
 
   private String extractUploadId(final String uploadUri) {
