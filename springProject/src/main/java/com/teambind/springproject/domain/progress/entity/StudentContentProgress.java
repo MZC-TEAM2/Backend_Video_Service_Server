@@ -127,6 +127,27 @@ public class StudentContentProgress {
     this.lastAccessedAt = LocalDateTime.now();
   }
 
+  /**
+   * 학습률 기반으로 진행률을 업데이트한다.
+   * 부정 시청을 제외한 유효 시청 시간 기반 학습률을 적용한다.
+   *
+   * @param learningRate 학습률 (0-100)
+   * @param completionThreshold 완료 기준 퍼센트
+   */
+  public void updateLearningRate(final int learningRate, final int completionThreshold) {
+    // 학습률이 기존 진행률보다 높을 때만 업데이트
+    if (learningRate > this.progressPercentage) {
+      this.progressPercentage = learningRate;
+    }
+    this.lastAccessedAt = LocalDateTime.now();
+
+    // 완료 처리
+    if (!this.isCompleted && this.progressPercentage >= completionThreshold) {
+      this.isCompleted = true;
+      this.completedAt = LocalDateTime.now();
+    }
+  }
+
   // Getters
   public Long getId() {
     return id;
