@@ -53,4 +53,20 @@ public interface WatchSessionRepository {
    * @param ttlSeconds TTL (초)
    */
   void refreshTtl(Long sessionId, long ttlSeconds);
+
+  /**
+   * 백업된 세션을 조회한다.
+   * TTL 만료 시 타임아웃 처리를 위해 사용된다.
+   *
+   * @param sessionId 세션 ID
+   * @return 백업된 세션 (Optional)
+   */
+  Optional<WatchSession> findBackupById(Long sessionId);
+
+  /**
+   * 백업된 세션을 삭제한다.
+   *
+   * @param sessionId 세션 ID
+   */
+  void deleteBackup(Long sessionId);
 }
