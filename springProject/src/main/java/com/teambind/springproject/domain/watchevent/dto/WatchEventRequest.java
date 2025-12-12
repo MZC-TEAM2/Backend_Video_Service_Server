@@ -14,11 +14,17 @@ public record WatchEventRequest(
     @NotNull(message = "이벤트 타입은 필수입니다.")
     WatchEventType eventType,
 
-    @NotNull(message = "이벤트 발생 시간은 필수입니다.")
     LocalDateTime timestamp,
 
     WatchEventPayload payload
 ) {
+
+  /**
+   * 타임스탬프를 반환한다. null이면 현재 시간을 반환한다.
+   */
+  public LocalDateTime getTimestampOrNow() {
+    return timestamp != null ? timestamp : LocalDateTime.now();
+  }
 
   /**
    * 이벤트 페이로드.

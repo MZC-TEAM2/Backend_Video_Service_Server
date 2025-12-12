@@ -9,6 +9,7 @@ import com.teambind.springproject.domain.watchevent.dto.WatchEventResponse;
 import com.teambind.springproject.domain.watchevent.entity.WatchEvent;
 import com.teambind.springproject.domain.watchevent.entity.WatchEventType;
 import com.teambind.springproject.domain.watchevent.repository.WatchEventRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -117,6 +118,7 @@ public class WatchEventService {
   ) {
     WatchEventType eventType = request.eventType();
     WatchEventPayload payload = request.payload();
+    LocalDateTime timestamp = request.getTimestampOrNow();
 
     return switch (eventType) {
       case PLAY, PAUSE -> WatchEvent.createPlaybackEvent(
@@ -124,14 +126,14 @@ public class WatchEventService {
           session.getUserId(),
           session.getContentId(),
           eventType,
-          request.timestamp(),
+          timestamp,
           payload != null ? payload.positionSeconds() : null
       );
       case SEEK -> WatchEvent.createSeekEvent(
           request.sessionId(),
           session.getUserId(),
           session.getContentId(),
-          request.timestamp(),
+          timestamp,
           payload != null ? payload.fromPosition() : null,
           payload != null ? payload.toPosition() : null
       );
@@ -139,7 +141,7 @@ public class WatchEventService {
           request.sessionId(),
           session.getUserId(),
           session.getContentId(),
-          request.timestamp(),
+          timestamp,
           payload != null ? payload.rate() : null
       );
       case VISIBILITY_HIDDEN, VISIBILITY_VISIBLE -> WatchEvent.createVisibilityEvent(
@@ -147,7 +149,7 @@ public class WatchEventService {
           session.getUserId(),
           session.getContentId(),
           eventType,
-          request.timestamp()
+          timestamp
       );
     };
   }
