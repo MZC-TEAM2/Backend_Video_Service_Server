@@ -32,6 +32,7 @@ public class TusConfig {
         .withDownloadFeature()
         .withUploadExpirationPeriod(24 * 60 * 60 * 1000L)  // 24시간
         .withMaxUploadSize(maxFileSize)
-        .withThreadLocalCache(true);
+        .withThreadLocalCache(true)
+        .withUploadUri("/api/v1/videos/upload");
   }
 }
