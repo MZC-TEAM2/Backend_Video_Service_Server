@@ -1,5 +1,6 @@
 package com.teambind.springproject.domain.progress.service;
 
+import com.teambind.springproject.domain.learning.service.LearningRateService;
 import com.teambind.springproject.domain.progress.dto.ProgressReportRequest;
 import com.teambind.springproject.domain.progress.dto.ProgressResponse;
 import com.teambind.springproject.domain.progress.entity.StudentContentProgress;
@@ -19,17 +20,20 @@ public class ProgressService {
 
   private final StudentContentProgressRepository progressRepository;
   private final WatchSessionRepository sessionRepository;
+  private final LearningRateService learningRateService;
   private final int completionThreshold;
   private final long sessionTimeoutSeconds;
 
   public ProgressService(
       final StudentContentProgressRepository progressRepository,
       final WatchSessionRepository sessionRepository,
+      final LearningRateService learningRateService,
       @Value("${learning.completion-threshold:90}") final int completionThreshold,
       @Value("${watch.session.timeout-seconds:30}") final long sessionTimeoutSeconds
   ) {
     this.progressRepository = progressRepository;
     this.sessionRepository = sessionRepository;
+    this.learningRateService = learningRateService;
     this.completionThreshold = completionThreshold;
     this.sessionTimeoutSeconds = sessionTimeoutSeconds;
   }
@@ -69,7 +73,19 @@ public class ProgressService {
 
     progressRepository.save(progress);
 
-    return ProgressResponse.from(progress);
+    // 학습률 기반 진행률 업데이트 (부정 시청 제외)
+    learningRateService.calculateAndUpdateLearningRate(
+        session.getUserId(),
+        request.contentId(),
+        request.totalDurationSeconds()
+    );
+
+    // 업데이트된 진행 상황 다시 조회
+    StudentContentProgress updatedProgress = progressRepository
+        .findByContentIdAndStudentId(request.contentId(), session.getUserId())
+        .orElse(progress);
+
+    return ProgressResponse.from(updatedProgress);
   }
 
   /**
