@@ -3,6 +3,7 @@ package com.teambind.springproject;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * Video Service Application.
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * fraud detection, and learning progress tracking.
  */
 @SpringBootApplication
+@EnableAsync
 public class SpringProjectApplication {
 
   /**
