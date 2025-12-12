@@ -108,15 +108,23 @@
 
         document.getElementById('currentSessionId').textContent = session.sessionId;
         document.getElementById('sessionStatus').textContent = session.status;
-        document.getElementById('sessionProgress').textContent = session.progressPercent || 0;
+        document.getElementById('sessionProgress').textContent = session.lastPositionSeconds || 0;
         document.getElementById('sessionInfo').style.display = 'block';
         document.getElementById('multiTabWarning').style.display = 'none';
 
         // Load video
         const videoSource = document.getElementById('videoSource');
+        const videoPlayer = document.getElementById('videoPlayer');
         videoSource.src = `/api/v1/videos/stream/${videoId}`;
-        document.getElementById('videoPlayer').load();
+        videoPlayer.load();
         document.getElementById('videoContainer').style.display = 'block';
+
+        // 비디오 메타데이터 로드 후 실제 duration 설정
+        videoPlayer.addEventListener('loadedmetadata', () => {
+          const actualDuration = Math.floor(videoPlayer.duration);
+          document.getElementById('totalDuration').value = actualDuration;
+          log(`Video duration detected: ${actualDuration}s`);
+        }, { once: true });
 
         // Start progress reporting
         startProgressReporting();
@@ -171,7 +179,7 @@
         const session = await response.json();
         document.getElementById('currentSessionId').textContent = session.sessionId;
         document.getElementById('sessionStatus').textContent = session.status;
-        document.getElementById('sessionProgress').textContent = session.progressPercent || 0;
+        document.getElementById('sessionProgress').textContent = session.lastPositionSeconds || 0;
         document.getElementById('sessionInfo').style.display = 'block';
 
         currentSessionId = session.sessionId;
@@ -185,9 +193,7 @@
       stopProgressReporting();
 
       const video = document.getElementById('videoPlayer');
-
       const contentId = document.getElementById('contentId').value;
-      const totalDuration = document.getElementById('totalDuration').value;
 
       // Report progress every 5 seconds
       progressInterval = setInterval(async () => {
@@ -195,6 +201,12 @@
 
         const currentPosition = Math.floor(video.currentTime);
         if (currentPosition === lastPosition) return;
+
+        // 비디오의 실제 duration 사용 (NaN이면 입력값 사용)
+        let totalDuration = Math.floor(video.duration);
+        if (isNaN(totalDuration) || totalDuration <= 0) {
+          totalDuration = parseInt(document.getElementById('totalDuration').value);
+        }
 
         try {
           const response = await fetch('/api/v1/progress', {
@@ -204,14 +216,14 @@
               sessionId: currentSessionId,
               contentId: parseInt(contentId),
               currentPositionSeconds: currentPosition,
-              totalDurationSeconds: parseInt(totalDuration)
+              totalDurationSeconds: totalDuration
             })
           });
 
           if (response.ok) {
             const progress = await response.json();
-            document.getElementById('sessionProgress').textContent = progress.progressPercent || 0;
-            log(`Progress reported: ${currentPosition}s (${progress.progressPercent}%)`);
+            document.getElementById('sessionProgress').textContent = progress.progressPercentage || 0;
+            log(`Progress reported: ${currentPosition}s / ${totalDuration}s (${progress.progressPercentage}%)`);
           }
 
           lastPosition = currentPosition;

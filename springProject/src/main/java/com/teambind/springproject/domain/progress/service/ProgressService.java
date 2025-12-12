@@ -47,7 +47,7 @@ public class ProgressService {
   @Transactional
   public ProgressResponse reportProgress(final ProgressReportRequest request) {
     // 세션 검증
-    WatchSession session = validateAndGetSession(request.sessionId());
+    WatchSession session = validateAndGetSession(request.getSessionIdAsLong());
 
     // 콘텐츠 ID 일치 확인
     if (!session.isForContent(request.contentId())) {
@@ -103,6 +103,11 @@ public class ProgressService {
 
   private WatchSession validateAndGetSession(final Long sessionId) {
     Optional<WatchSession> sessionOpt = sessionRepository.findById(sessionId);
+
+    if (sessionOpt.isEmpty()) {
+      // 백업에서 조회 시도
+      sessionOpt = sessionRepository.findBackupById(sessionId);
+    }
 
     if (sessionOpt.isEmpty()) {
       throw new IllegalArgumentException("세션을 찾을 수 없습니다.");

@@ -6,9 +6,10 @@ import java.time.LocalDateTime;
 
 /**
  * 시청 세션 응답 DTO.
+ * sessionId는 JavaScript Number 정밀도 문제로 String으로 반환한다.
  */
 public record SessionResponse(
-    Long sessionId,
+    String sessionId,
     Long userId,
     Long contentId,
     LocalDateTime startedAt,
@@ -25,7 +26,7 @@ public record SessionResponse(
    */
   public static SessionResponse from(final WatchSession session) {
     return new SessionResponse(
-        session.getSessionId(),
+        String.valueOf(session.getSessionId()),
         session.getUserId(),
         session.getContentId(),
         session.getStartedAt(),

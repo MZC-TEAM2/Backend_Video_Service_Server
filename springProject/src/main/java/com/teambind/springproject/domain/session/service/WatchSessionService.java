@@ -6,6 +6,8 @@ import com.teambind.springproject.domain.session.dto.SessionStartRequest;
 import com.teambind.springproject.domain.session.entity.WatchSession;
 import com.teambind.springproject.domain.session.repository.WatchSessionRepository;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class WatchSessionService {
+
+  private static final Logger log = LoggerFactory.getLogger(WatchSessionService.class);
 
   private final WatchSessionRepository sessionRepository;
   private final PrimaryKeyGenerator keyGenerator;
@@ -44,7 +48,14 @@ public class WatchSessionService {
         request.contentId()
     );
 
+    log.info("세션 생성: sessionId={}, userId={}, contentId={}",
+        sessionId, request.userId(), request.contentId());
+
     sessionRepository.save(session);
+
+    // 저장 확인
+    Optional<WatchSession> savedSession = sessionRepository.findById(sessionId);
+    log.info("세션 저장 확인: sessionId={}, found={}", sessionId, savedSession.isPresent());
 
     return SessionResponse.from(session);
   }

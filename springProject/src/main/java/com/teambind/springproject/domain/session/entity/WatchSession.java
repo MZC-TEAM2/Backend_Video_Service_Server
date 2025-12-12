@@ -1,5 +1,9 @@
 package com.teambind.springproject.domain.session.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -7,6 +11,7 @@ import java.time.LocalDateTime;
  * 동영상 시청 세션을 나타내는 도메인 객체.
  * Redis에 저장되어 활성 세션을 관리한다.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WatchSession implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -19,14 +24,15 @@ public class WatchSession implements Serializable {
   private WatchSessionStatus status;
   private Integer lastPositionSeconds;
 
-  private WatchSession(
-      final Long sessionId,
-      final Long userId,
-      final Long contentId,
-      final LocalDateTime startedAt,
-      final LocalDateTime lastActiveAt,
-      final WatchSessionStatus status,
-      final Integer lastPositionSeconds
+  @JsonCreator
+  public WatchSession(
+      @JsonProperty("sessionId") final Long sessionId,
+      @JsonProperty("userId") final Long userId,
+      @JsonProperty("contentId") final Long contentId,
+      @JsonProperty("startedAt") final LocalDateTime startedAt,
+      @JsonProperty("lastActiveAt") final LocalDateTime lastActiveAt,
+      @JsonProperty("status") final WatchSessionStatus status,
+      @JsonProperty("lastPositionSeconds") final Integer lastPositionSeconds
   ) {
     this.sessionId = sessionId;
     this.userId = userId;
@@ -62,37 +68,6 @@ public class WatchSession implements Serializable {
     );
   }
 
-  /**
-   * 저장된 세션을 복원한다.
-   *
-   * @param sessionId 세션 ID
-   * @param userId 사용자 ID
-   * @param contentId 콘텐츠 ID
-   * @param startedAt 시작 시간
-   * @param lastActiveAt 마지막 활성 시간
-   * @param status 상태
-   * @param lastPositionSeconds 마지막 시청 위치
-   * @return WatchSession 인스턴스
-   */
-  public static WatchSession restore(
-      final Long sessionId,
-      final Long userId,
-      final Long contentId,
-      final LocalDateTime startedAt,
-      final LocalDateTime lastActiveAt,
-      final WatchSessionStatus status,
-      final Integer lastPositionSeconds
-  ) {
-    return new WatchSession(
-        sessionId,
-        userId,
-        contentId,
-        startedAt,
-        lastActiveAt,
-        status,
-        lastPositionSeconds
-    );
-  }
 
   /**
    * 시청 진행 상황을 업데이트한다.
@@ -133,6 +108,7 @@ public class WatchSession implements Serializable {
    *
    * @return 활성 상태이면 true
    */
+  @JsonIgnore
   public boolean isActive() {
     return status.isActive();
   }
@@ -143,6 +119,7 @@ public class WatchSession implements Serializable {
    * @param userId 확인할 사용자 ID
    * @return 해당 사용자의 세션이면 true
    */
+  @JsonIgnore
   public boolean belongsTo(final Long userId) {
     return this.userId.equals(userId);
   }
@@ -153,6 +130,7 @@ public class WatchSession implements Serializable {
    * @param contentId 확인할 콘텐츠 ID
    * @return 해당 콘텐츠의 세션이면 true
    */
+  @JsonIgnore
   public boolean isForContent(final Long contentId) {
     return this.contentId.equals(contentId);
   }

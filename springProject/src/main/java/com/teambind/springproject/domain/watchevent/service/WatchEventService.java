@@ -48,10 +48,11 @@ public class WatchEventService {
   @Transactional
   public WatchEventResponse recordEvent(final WatchEventRequest request) {
     // 세션 검증
-    WatchSession session = validateAndGetSession(request.sessionId());
+    Long sessionId = request.getSessionIdAsLong();
+    WatchSession session = validateAndGetSession(sessionId);
 
     // 이벤트 생성
-    WatchEvent event = createEventFromRequest(request, session);
+    WatchEvent event = createEventFromRequest(request, session, sessionId);
 
     // 저장
     WatchEvent savedEvent = eventRepository.save(event);
@@ -60,7 +61,7 @@ public class WatchEventService {
     fraudDetectionService.analyzeEvent(savedEvent);
 
     log.debug("시청 이벤트 기록: sessionId={}, type={}, userId={}, contentId={}",
-        request.sessionId(), request.eventType(), session.getUserId(), session.getContentId());
+        sessionId, request.eventType(), session.getUserId(), session.getContentId());
 
     return WatchEventResponse.from(savedEvent);
   }
@@ -114,7 +115,8 @@ public class WatchEventService {
 
   private WatchEvent createEventFromRequest(
       final WatchEventRequest request,
-      final WatchSession session
+      final WatchSession session,
+      final Long sessionId
   ) {
     WatchEventType eventType = request.eventType();
     WatchEventPayload payload = request.payload();
@@ -122,7 +124,7 @@ public class WatchEventService {
 
     return switch (eventType) {
       case PLAY, PAUSE -> WatchEvent.createPlaybackEvent(
-          request.sessionId(),
+          sessionId,
           session.getUserId(),
           session.getContentId(),
           eventType,
@@ -130,7 +132,7 @@ public class WatchEventService {
           payload != null ? payload.positionSeconds() : null
       );
       case SEEK -> WatchEvent.createSeekEvent(
-          request.sessionId(),
+          sessionId,
           session.getUserId(),
           session.getContentId(),
           timestamp,
@@ -138,14 +140,14 @@ public class WatchEventService {
           payload != null ? payload.toPosition() : null
       );
       case RATE_CHANGE -> WatchEvent.createRateChangeEvent(
-          request.sessionId(),
+          sessionId,
           session.getUserId(),
           session.getContentId(),
           timestamp,
           payload != null ? payload.rate() : null
       );
       case VISIBILITY_HIDDEN, VISIBILITY_VISIBLE -> WatchEvent.createVisibilityEvent(
-          request.sessionId(),
+          sessionId,
           session.getUserId(),
           session.getContentId(),
           eventType,
