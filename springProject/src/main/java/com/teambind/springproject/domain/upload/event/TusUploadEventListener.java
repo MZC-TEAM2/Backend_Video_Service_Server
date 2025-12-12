@@ -46,12 +46,41 @@ public class TusUploadEventListener implements HandlerInterceptor {
     }
 
     try {
-      if ("PATCH".equals(method)) {
+      if ("POST".equals(method)) {
+        handlePostCreation(response);
+      } else if ("PATCH".equals(method)) {
         handlePatchCompletion(uri, response);
       }
     } catch (Exception e) {
       log.error("업로드 이벤트 처리 실패: {}", e.getMessage(), e);
     }
+  }
+
+  private void handlePostCreation(final HttpServletResponse response) throws Exception {
+    // 201 Created 응답 시에만 처리
+    if (response.getStatus() != 201) {
+      return;
+    }
+
+    // Location 헤더에서 업로드 URI 추출
+    String location = response.getHeader("Location");
+    if (location == null || location.isEmpty()) {
+      return;
+    }
+
+    // 전체 URL에서 경로만 추출
+    String uploadUri = location;
+    if (location.contains("://")) {
+      int pathStart = location.indexOf("/", location.indexOf("://") + 3);
+      if (pathStart > 0) {
+        uploadUri = location.substring(pathStart);
+      }
+    }
+
+    log.info("업로드 생성 감지: uri={}", uploadUri);
+
+    // 메타데이터 저장 (userId는 임시로 1L 사용, 실제로는 인증 정보에서 가져와야 함)
+    completionService.saveUploadMetadata(uploadUri, 1L);
   }
 
   private void handlePatchCompletion(final String uri, final HttpServletResponse response)
