@@ -186,6 +186,9 @@
 
       const video = document.getElementById('videoPlayer');
 
+      const contentId = document.getElementById('contentId').value;
+      const totalDuration = document.getElementById('totalDuration').value;
+
       // Report progress every 5 seconds
       progressInterval = setInterval(async () => {
         if (!currentSessionId) return;
@@ -194,13 +197,14 @@
         if (currentPosition === lastPosition) return;
 
         try {
-          const response = await fetch('/api/v1/progress/report', {
+          const response = await fetch('/api/v1/progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sessionId: currentSessionId,
-              currentPosition: currentPosition,
-              playbackRate: video.playbackRate
+              contentId: parseInt(contentId),
+              currentPositionSeconds: currentPosition,
+              totalDurationSeconds: parseInt(totalDuration)
             })
           });
 
@@ -239,17 +243,21 @@
       }
     }
 
-    async function sendWatchEvent(eventType, position, payload = null) {
+    async function sendWatchEvent(eventType, position, rate = null) {
       if (!currentSessionId) return;
 
       try {
         const body = {
           sessionId: currentSessionId,
           eventType: eventType,
-          position: Math.floor(position)
+          timestamp: new Date().toISOString(),
+          payload: {
+            positionSeconds: Math.floor(position)
+          }
         };
-        if (payload) {
-          body.payload = String(payload);
+
+        if (rate !== null) {
+          body.payload.rate = rate;
         }
 
         await fetch('/api/v1/watch-events', {
