@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Watch Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, button { padding: 8px; font-size: 14px; }
+    input[type="text"], input[type="number"] { width: 200px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; margin-right: 10px; }
+    button:hover { background: #0056b3; }
+    button.danger { background: #dc3545; }
+    button.danger:hover { background: #c82333; }
+    button.success { background: #28a745; }
+    button.success:hover { background: #218838; }
+    #videoContainer { margin-top: 20px; }
+    video { width: 100%; max-width: 800px; background: #000; }
+    #log { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    #sessionInfo { margin-top: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #b3d7ff; border-radius: 4px; }
+    .warning { color: #856404; background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+  <h1>Video Watch Test</h1>
+
+  <div class="warning" id="multiTabWarning" style="display:none;">
+    Warning: Another tab/window is already playing. Your session was terminated.
+  </div>
+
+  <div class="form-group">
+    <label>User ID:</label>
+    <input type="number" id="userId" value="1" />
+  </div>
+
+  <div class="form-group">
+    <label>Content ID (week_contents.id):</label>
+    <input type="number" id="contentId" value="1" />
+  </div>
+
+  <div class="form-group">
+    <label>Video Upload ID:</label>
+    <input type="number" id="videoId" value="1" />
+  </div>
+
+  <div class="form-group">
+    <label>Video Duration (seconds):</label>
+    <input type="number" id="totalDuration" value="120" />
+  </div>
+
+  <div>
+    <button class="success" onclick="startSession()">Start Session</button>
+    <button class="danger" onclick="endSession()">End Session</button>
+    <button onclick="checkActiveSession()">Check Active Session</button>
+  </div>
+
+  <div id="sessionInfo" style="display:none;">
+    <strong>Session ID:</strong> <span id="currentSessionId">-</span><br>
+    <strong>Status:</strong> <span id="sessionStatus">-</span><br>
+    <strong>Progress:</strong> <span id="sessionProgress">0</span>%
+  </div>
+
+  <div id="videoContainer" style="display:none;">
+    <video id="videoPlayer" controls>
+      <source id="videoSource" src="" type="video/mp4">
+    </video>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    let currentSessionId = null;
+    let progressInterval = null;
+    let lastPosition = 0;
+
+    function log(message) {
+      const logDiv = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      logDiv.innerHTML = `[${time}] ${message}<br>` + logDiv.innerHTML;
+      console.log(message);
+    }
+
+    async function startSession() {
+      const userId = document.getElementById('userId').value;
+      const contentId = document.getElementById('contentId').value;
+      const videoId = document.getElementById('videoId').value;
+      const totalDuration = document.getElementById('totalDuration').value;
+
+      try {
+        const response = await fetch('/api/v1/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: parseInt(userId),
+            contentId: parseInt(contentId),
+            totalDuration: parseInt(totalDuration)
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(error);
+        }
+
+        const session = await response.json();
+        currentSessionId = session.sessionId;
+
+        document.getElementById('currentSessionId').textContent = session.sessionId;
+        document.getElementById('sessionStatus').textContent = session.status;
+        document.getElementById('sessionProgress').textContent = session.progressPercent || 0;
+        document.getElementById('sessionInfo').style.display = 'block';
+        document.getElementById('multiTabWarning').style.display = 'none';
+
+        // Load video
+        const videoSource = document.getElementById('videoSource');
+        videoSource.src = `/api/v1/videos/stream/${videoId}`;
+        document.getElementById('videoPlayer').load();
+        document.getElementById('videoContainer').style.display = 'block';
+
+        // Start progress reporting
+        startProgressReporting();
+
+        log(`Session started: ${session.sessionId}`);
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+        alert('Failed to start session: ' + error.message);
+      }
+    }
+
+    async function endSession() {
+      if (!currentSessionId) {
+        alert('No active session');
+        return;
+      }
+
+      const userId = document.getElementById('userId').value;
+
+      try {
+        const response = await fetch(`/api/v1/sessions/${currentSessionId}?userId=${userId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to end session');
+        }
+
+        stopProgressReporting();
+        document.getElementById('sessionStatus').textContent = 'ENDED';
+        document.getElementById('videoPlayer').pause();
+
+        log(`Session ended: ${currentSessionId}`);
+        currentSessionId = null;
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+      }
+    }
+
+    async function checkActiveSession() {
+      const userId = document.getElementById('userId').value;
+
+      try {
+        const response = await fetch(`/api/v1/sessions/active?userId=${userId}`);
+
+        if (response.status === 404) {
+          log('No active session found');
+          document.getElementById('sessionInfo').style.display = 'none';
+          return;
+        }
+
+        const session = await response.json();
+        document.getElementById('currentSessionId').textContent = session.sessionId;
+        document.getElementById('sessionStatus').textContent = session.status;
+        document.getElementById('sessionProgress').textContent = session.progressPercent || 0;
+        document.getElementById('sessionInfo').style.display = 'block';
+
+        currentSessionId = session.sessionId;
+        log(`Active session found: ${session.sessionId}`);
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+      }
+    }
+
+    function startProgressReporting() {
+      stopProgressReporting();
+
+      const video = document.getElementById('videoPlayer');
+
+      // Report progress every 5 seconds
+      progressInterval = setInterval(async () => {
+        if (!currentSessionId) return;
+
+        const currentPosition = Math.floor(video.currentTime);
+        if (currentPosition === lastPosition) return;
+
+        try {
+          const response = await fetch('/api/v1/progress/report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: currentSessionId,
+              currentPosition: currentPosition,
+              playbackRate: video.playbackRate
+            })
+          });
+
+          if (response.ok) {
+            const progress = await response.json();
+            document.getElementById('sessionProgress').textContent = progress.progressPercent || 0;
+            log(`Progress reported: ${currentPosition}s (${progress.progressPercent}%)`);
+          }
+
+          lastPosition = currentPosition;
+        } catch (error) {
+          log(`Progress report error: ${error.message}`);
+        }
+      }, 5000);
+
+      // Send watch events
+      video.addEventListener('play', () => sendWatchEvent('PLAY', video.currentTime));
+      video.addEventListener('pause', () => sendWatchEvent('PAUSE', video.currentTime));
+      video.addEventListener('seeked', () => sendWatchEvent('SEEK', video.currentTime));
+      video.addEventListener('ratechange', () => sendWatchEvent('RATE_CHANGE', video.currentTime, video.playbackRate));
+
+      // Detect tab visibility
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          sendWatchEvent('VISIBILITY_HIDDEN', video.currentTime);
+        } else {
+          sendWatchEvent('VISIBILITY_VISIBLE', video.currentTime);
+        }
+      });
+    }
+
+    function stopProgressReporting() {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+    }
+
+    async function sendWatchEvent(eventType, position, payload = null) {
+      if (!currentSessionId) return;
+
+      try {
+        const body = {
+          sessionId: currentSessionId,
+          eventType: eventType,
+          position: Math.floor(position)
+        };
+        if (payload) {
+          body.payload = String(payload);
+        }
+
+        await fetch('/api/v1/watch-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        log(`Event sent: ${eventType} at ${Math.floor(position)}s`);
+      } catch (error) {
+        log(`Event error: ${error.message}`);
+      }
+    }
+
+    // Handle page unload
+    window.addEventListener('beforeunload', () => {
+      if (currentSessionId) {
+        const userId = document.getElementById('userId').value;
+        navigator.sendBeacon(`/api/v1/sessions/${currentSessionId}?userId=${userId}`, '');
+      }
+    });
+  </script>
+</body>
+</html>
