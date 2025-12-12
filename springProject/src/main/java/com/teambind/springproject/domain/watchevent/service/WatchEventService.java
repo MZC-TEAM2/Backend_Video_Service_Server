@@ -1,5 +1,6 @@
 package com.teambind.springproject.domain.watchevent.service;
 
+import com.teambind.springproject.domain.fraud.service.FraudDetectionService;
 import com.teambind.springproject.domain.session.entity.WatchSession;
 import com.teambind.springproject.domain.session.repository.WatchSessionRepository;
 import com.teambind.springproject.domain.watchevent.dto.WatchEventRequest;
@@ -25,13 +26,16 @@ public class WatchEventService {
 
   private final WatchEventRepository eventRepository;
   private final WatchSessionRepository sessionRepository;
+  private final FraudDetectionService fraudDetectionService;
 
   public WatchEventService(
       final WatchEventRepository eventRepository,
-      final WatchSessionRepository sessionRepository
+      final WatchSessionRepository sessionRepository,
+      final FraudDetectionService fraudDetectionService
   ) {
     this.eventRepository = eventRepository;
     this.sessionRepository = sessionRepository;
+    this.fraudDetectionService = fraudDetectionService;
   }
 
   /**
@@ -50,6 +54,9 @@ public class WatchEventService {
 
     // 저장
     WatchEvent savedEvent = eventRepository.save(event);
+
+    // 부정 시청 감지
+    fraudDetectionService.analyzeEvent(savedEvent);
 
     log.debug("시청 이벤트 기록: sessionId={}, type={}, userId={}, contentId={}",
         request.sessionId(), request.eventType(), session.getUserId(), session.getContentId());
