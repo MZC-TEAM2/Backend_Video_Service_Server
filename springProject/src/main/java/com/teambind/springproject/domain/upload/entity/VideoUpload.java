@@ -54,6 +54,15 @@ public class VideoUpload {
   @Column(name = "storage_path")
   private String storagePath;
 
+  @Column(name = "week_id")
+  private Long weekId;
+
+  @Column(name = "title", length = 200)
+  private String title;
+
+  @Column(name = "duration", length = 10)
+  private String duration;
+
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
@@ -71,13 +80,17 @@ public class VideoUpload {
       final Long userId,
       final String originalFilename,
       final Long fileSize,
-      final String contentType
+      final String contentType,
+      final Long weekId,
+      final String title
   ) {
     this.tusUploadId = tusUploadId;
     this.userId = userId;
     this.originalFilename = originalFilename;
     this.fileSize = fileSize;
     this.contentType = contentType;
+    this.weekId = weekId;
+    this.title = title;
     this.uploadedBytes = 0L;
     this.status = UploadStatus.IN_PROGRESS;
     this.createdAt = LocalDateTime.now();
@@ -92,6 +105,8 @@ public class VideoUpload {
    * @param originalFilename 원본 파일명
    * @param fileSize 파일 크기
    * @param contentType 콘텐츠 타입
+   * @param weekId 주차 ID
+   * @param title 콘텐츠 제목
    * @return VideoUpload 인스턴스
    */
   public static VideoUpload create(
@@ -99,9 +114,12 @@ public class VideoUpload {
       final Long userId,
       final String originalFilename,
       final Long fileSize,
-      final String contentType
+      final String contentType,
+      final Long weekId,
+      final String title
   ) {
-    return new VideoUpload(tusUploadId, userId, originalFilename, fileSize, contentType);
+    return new VideoUpload(tusUploadId, userId, originalFilename, fileSize, contentType,
+        weekId, title);
   }
 
   /**
@@ -199,6 +217,28 @@ public class VideoUpload {
 
   public String getStoragePath() {
     return storagePath;
+  }
+
+  public Long getWeekId() {
+    return weekId;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public String getDuration() {
+    return duration;
+  }
+
+  /**
+   * 동영상 길이를 설정한다.
+   *
+   * @param duration 동영상 길이 (예: "45:23")
+   */
+  public void setDuration(final String duration) {
+    this.duration = duration;
+    this.updatedAt = LocalDateTime.now();
   }
 
   public LocalDateTime getCreatedAt() {
