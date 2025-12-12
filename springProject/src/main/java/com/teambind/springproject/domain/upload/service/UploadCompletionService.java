@@ -104,8 +104,9 @@ public class UploadCompletionService {
       filename = "unknown";
     }
 
-    // TUS 메타데이터에서 weekId, title 추출
+    // TUS 메타데이터에서 courseId, weekId, title 추출
     Map<String, String> metadata = uploadInfo.getMetadata();
+    Long courseId = extractLongMetadata(metadata, "courseId");
     Long weekId = extractLongMetadata(metadata, "weekId");
     String title = extractStringMetadata(metadata, "title", filename);
 
@@ -115,13 +116,14 @@ public class UploadCompletionService {
         filename,
         uploadInfo.getLength(),
         uploadInfo.getFileMimeType(),
+        courseId,
         weekId,
         title
     );
 
     uploadRepository.save(upload);
-    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}, weekId={}, title={}",
-        tusUploadId, filename, weekId, title);
+    log.debug("업로드 메타데이터 저장: tusUploadId={}, filename={}, courseId={}, weekId={}, title={}",
+        tusUploadId, filename, courseId, weekId, title);
   }
 
   /**
@@ -184,6 +186,7 @@ public class UploadCompletionService {
 
     // WeekContent 생성 및 저장
     WeekContent weekContent = WeekContent.createVideo(
+        upload.getCourseId(),
         upload.getWeekId(),
         upload.getTitle(),
         contentUrl,
@@ -192,8 +195,8 @@ public class UploadCompletionService {
     );
 
     weekContentRepository.save(weekContent);
-    log.info("WeekContent 생성: weekId={}, title={}, contentUrl={}",
-        upload.getWeekId(), upload.getTitle(), contentUrl);
+    log.info("WeekContent 생성: courseId={}, weekId={}, title={}, contentUrl={}",
+        upload.getCourseId(), upload.getWeekId(), upload.getTitle(), contentUrl);
   }
 
   private String buildStreamUrl(final Long videoUploadId) {

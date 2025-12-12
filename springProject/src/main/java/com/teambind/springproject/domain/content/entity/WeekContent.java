@@ -28,6 +28,9 @@ public class WeekContent {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(name = "course_id", nullable = false)
+  private Long courseId;
+
   @Column(name = "week_id", nullable = false)
   private Long weekId;
 
@@ -54,6 +57,7 @@ public class WeekContent {
   }
 
   private WeekContent(
+      final Long courseId,
       final Long weekId,
       final ContentType contentType,
       final String title,
@@ -61,6 +65,7 @@ public class WeekContent {
       final String duration,
       final Integer displayOrder
   ) {
+    this.courseId = courseId;
     this.weekId = weekId;
     this.contentType = contentType;
     this.title = title;
@@ -73,6 +78,7 @@ public class WeekContent {
   /**
    * 비디오 콘텐츠를 생성한다.
    *
+   * @param courseId 강의 ID
    * @param weekId 주차 ID
    * @param title 콘텐츠 제목
    * @param contentUrl 콘텐츠 URL
@@ -81,18 +87,21 @@ public class WeekContent {
    * @return WeekContent 인스턴스
    */
   public static WeekContent createVideo(
+      final Long courseId,
       final Long weekId,
       final String title,
       final String contentUrl,
       final String duration,
       final Integer displayOrder
   ) {
-    return new WeekContent(weekId, ContentType.VIDEO, title, contentUrl, duration, displayOrder);
+    return new WeekContent(courseId, weekId, ContentType.VIDEO, title, contentUrl, duration,
+        displayOrder);
   }
 
   /**
    * 문서 콘텐츠를 생성한다.
    *
+   * @param courseId 강의 ID
    * @param weekId 주차 ID
    * @param title 콘텐츠 제목
    * @param contentUrl 콘텐츠 URL
@@ -100,17 +109,20 @@ public class WeekContent {
    * @return WeekContent 인스턴스
    */
   public static WeekContent createDocument(
+      final Long courseId,
       final Long weekId,
       final String title,
       final String contentUrl,
       final Integer displayOrder
   ) {
-    return new WeekContent(weekId, ContentType.DOCUMENT, title, contentUrl, null, displayOrder);
+    return new WeekContent(courseId, weekId, ContentType.DOCUMENT, title, contentUrl, null,
+        displayOrder);
   }
 
   /**
    * 링크 콘텐츠를 생성한다.
    *
+   * @param courseId 강의 ID
    * @param weekId 주차 ID
    * @param title 콘텐츠 제목
    * @param contentUrl 콘텐츠 URL
@@ -118,17 +130,23 @@ public class WeekContent {
    * @return WeekContent 인스턴스
    */
   public static WeekContent createLink(
+      final Long courseId,
       final Long weekId,
       final String title,
       final String contentUrl,
       final Integer displayOrder
   ) {
-    return new WeekContent(weekId, ContentType.LINK, title, contentUrl, null, displayOrder);
+    return new WeekContent(courseId, weekId, ContentType.LINK, title, contentUrl, null,
+        displayOrder);
   }
 
   // Getters
   public Long getId() {
     return id;
+  }
+
+  public Long getCourseId() {
+    return courseId;
   }
 
   public Long getWeekId() {

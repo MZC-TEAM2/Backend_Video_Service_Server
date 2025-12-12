@@ -21,6 +21,11 @@
   <h1>TUS Video Upload Test</h1>
 
   <div class="form-group">
+    <label>Course ID:</label>
+    <input type="number" id="courseId" value="1" />
+  </div>
+
+  <div class="form-group">
     <label>Week ID:</label>
     <input type="number" id="weekId" value="1" />
   </div>
@@ -58,6 +63,7 @@
 
     function startUpload() {
       const fileInput = document.getElementById('file');
+      const courseId = document.getElementById('courseId').value;
       const weekId = document.getElementById('weekId').value;
       const title = document.getElementById('title').value;
 
@@ -78,6 +84,7 @@
         metadata: {
           filename: file.name,
           filetype: file.type,
+          courseId: courseId,
           weekId: weekId,
           title: title
         },

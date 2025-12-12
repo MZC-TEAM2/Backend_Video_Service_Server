@@ -54,6 +54,9 @@ public class VideoUpload {
   @Column(name = "storage_path")
   private String storagePath;
 
+  @Column(name = "course_id")
+  private Long courseId;
+
   @Column(name = "week_id")
   private Long weekId;
 
@@ -81,6 +84,7 @@ public class VideoUpload {
       final String originalFilename,
       final Long fileSize,
       final String contentType,
+      final Long courseId,
       final Long weekId,
       final String title
   ) {
@@ -89,6 +93,7 @@ public class VideoUpload {
     this.originalFilename = originalFilename;
     this.fileSize = fileSize;
     this.contentType = contentType;
+    this.courseId = courseId;
     this.weekId = weekId;
     this.title = title;
     this.uploadedBytes = 0L;
@@ -105,6 +110,7 @@ public class VideoUpload {
    * @param originalFilename 원본 파일명
    * @param fileSize 파일 크기
    * @param contentType 콘텐츠 타입
+   * @param courseId 강의 ID
    * @param weekId 주차 ID
    * @param title 콘텐츠 제목
    * @return VideoUpload 인스턴스
@@ -115,11 +121,12 @@ public class VideoUpload {
       final String originalFilename,
       final Long fileSize,
       final String contentType,
+      final Long courseId,
       final Long weekId,
       final String title
   ) {
     return new VideoUpload(tusUploadId, userId, originalFilename, fileSize, contentType,
-        weekId, title);
+        courseId, weekId, title);
   }
 
   /**
@@ -217,6 +224,10 @@ public class VideoUpload {
 
   public String getStoragePath() {
     return storagePath;
+  }
+
+  public Long getCourseId() {
+    return courseId;
   }
 
   public Long getWeekId() {
