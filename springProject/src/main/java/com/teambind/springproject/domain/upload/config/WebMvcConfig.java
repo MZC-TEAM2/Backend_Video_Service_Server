@@ -10,16 +10,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
-
-  private final TusUploadEventListener tusUploadEventListener;
-
-  public WebMvcConfig(final TusUploadEventListener tusUploadEventListener) {
-    this.tusUploadEventListener = tusUploadEventListener;
-  }
-
-  @Override
-  public void addInterceptors(final InterceptorRegistry registry) {
-    registry.addInterceptor(tusUploadEventListener)
-        .addPathPatterns("/api/v1/videos/upload/**");
-  }
+	
+	private final TusUploadEventListener tusUploadEventListener;
+	
+	public WebMvcConfig(final TusUploadEventListener tusUploadEventListener) {
+		this.tusUploadEventListener = tusUploadEventListener;
+	}
+	
+	@Override
+	public void addInterceptors(final InterceptorRegistry registry) {
+		registry.addInterceptor(tusUploadEventListener)
+				.addPathPatterns("/api/v1/videos/upload/**");
+	}
 }
