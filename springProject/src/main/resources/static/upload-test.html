@@ -1,140 +1,196 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>TUS Upload Test</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input, button { padding: 8px; font-size: 14px; }
-    input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; padding: 10px 20px; }
-    button:hover { background: #0056b3; }
-    #progress { margin-top: 20px; }
-    .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 4px; }
-    .progress-fill { height: 100%; background: #28a745; border-radius: 4px; transition: width 0.3s; }
-    #log { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>TUS Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, button {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #progress {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
-  <h1>TUS Video Upload Test</h1>
+<h1>TUS Video Upload Test</h1>
 
-  <div class="form-group">
+<div class="form-group">
     <label>Course ID:</label>
-    <input type="number" id="courseId" value="1" />
-  </div>
+    <input id="courseId" type="number" value="1"/>
+</div>
 
-  <div class="form-group">
+<div class="form-group">
     <label>Week ID:</label>
-    <input type="number" id="weekId" value="1" />
-  </div>
+    <input id="weekId" type="number" value="1"/>
+</div>
 
-  <div class="form-group">
+<div class="form-group">
     <label>Title:</label>
-    <input type="text" id="title" value="Test Video" />
-  </div>
+    <input id="title" type="text" value="Test Video"/>
+</div>
 
-  <div class="form-group">
+<div class="form-group">
     <label>Video File:</label>
-    <input type="file" id="file" accept="video/*" />
+    <input accept="video/*" id="file" type="file"/>
     <p id="durationDisplay" style="margin-top: 5px; color: #666;"></p>
-  </div>
+</div>
 
-  <button onclick="startUpload()">Upload</button>
+<button onclick="startUpload()">Upload</button>
 
-  <div id="progress" style="display:none;">
+<div id="progress" style="display:none;">
     <div class="progress-bar">
-      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
     </div>
     <p id="progressText">0%</p>
-  </div>
+</div>
 
-  <div id="log"></div>
+<div id="log"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js"></script>
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js"></script>
+<script>
     let videoDuration = '';
 
     // 파일 선택 시 동영상 길이 추출
-    document.getElementById('file').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    document.getElementById('file').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.onloadedmetadata = function() {
-        window.URL.revokeObjectURL(video.src);
-        const seconds = Math.floor(video.duration);
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        videoDuration = `${minutes}:${secs.toString().padStart(2, '0')}`;
-        document.getElementById('durationDisplay').textContent = `Duration: ${videoDuration}`;
-      };
-      video.src = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadedmetadata = function () {
+            window.URL.revokeObjectURL(video.src);
+            const seconds = Math.floor(video.duration);
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            videoDuration = `${minutes}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('durationDisplay').textContent = `Duration: ${videoDuration}`;
+        };
+        video.src = URL.createObjectURL(file);
     });
 
     function log(message) {
-      const logDiv = document.getElementById('log');
-      const time = new Date().toLocaleTimeString();
-      logDiv.innerHTML += `[${time}] ${message}<br>`;
-      logDiv.scrollTop = logDiv.scrollHeight;
-      console.log(message);
+        const logDiv = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        logDiv.innerHTML += `[${time}] ${message}<br>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+        console.log(message);
     }
 
     function startUpload() {
-      const fileInput = document.getElementById('file');
-      const courseId = document.getElementById('courseId').value;
-      const weekId = document.getElementById('weekId').value;
-      const title = document.getElementById('title').value;
+        const fileInput = document.getElementById('file');
+        const courseId = document.getElementById('courseId').value;
+        const weekId = document.getElementById('weekId').value;
+        const title = document.getElementById('title').value;
 
-      if (!fileInput.files[0]) {
-        alert('Please select a file');
-        return;
-      }
-
-      const file = fileInput.files[0];
-      log(`Starting upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB), Duration: ${videoDuration}`);
-
-      document.getElementById('progress').style.display = 'block';
-
-      const upload = new tus.Upload(file, {
-        endpoint: '/api/v1/videos/upload',
-        retryDelays: [0, 1000, 3000, 5000],
-        chunkSize: 5 * 1024 * 1024, // 5MB chunks
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-          courseId: courseId,
-          weekId: weekId,
-          title: title,
-          duration: videoDuration
-        },
-        onError: function(error) {
-          log(`ERROR: ${error}`);
-          alert('Upload failed: ' + error);
-        },
-        onProgress: function(bytesUploaded, bytesTotal) {
-          const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-          document.getElementById('progressFill').style.width = percentage + '%';
-          document.getElementById('progressText').textContent = percentage + '%';
-          log(`Progress: ${percentage}% (${(bytesUploaded/1024/1024).toFixed(2)}/${(bytesTotal/1024/1024).toFixed(2)} MB)`);
-        },
-        onSuccess: function() {
-          log(`Upload complete!`);
-          log(`Upload URL: ${upload.url}`);
-
-          // Extract video ID from URL
-          const uploadId = upload.url.split('/').pop();
-          log(`Video ID: ${uploadId}`);
-          log(`Stream URL: /api/v1/videos/stream/${uploadId}`);
-
-          alert('Upload successful!\n\nCheck the log for details.');
+        if (!fileInput.files[0]) {
+            alert('Please select a file');
+            return;
         }
-      });
 
-      upload.start();
+        const file = fileInput.files[0];
+        log(`Starting upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB), Duration: ${videoDuration}`);
+
+        document.getElementById('progress').style.display = 'block';
+
+        const upload = new tus.Upload(file, {
+            endpoint: '/api/v1/videos/upload',
+            retryDelays: [0, 1000, 3000, 5000],
+            chunkSize: 5 * 1024 * 1024, // 5MB chunks
+            metadata: {
+                filename: file.name,
+                filetype: file.type,
+                courseId: courseId,
+                weekId: weekId,
+                title: title,
+                duration: videoDuration
+            },
+            onError: function (error) {
+                log(`ERROR: ${error}`);
+                alert('Upload failed: ' + error);
+            },
+            onProgress: function (bytesUploaded, bytesTotal) {
+                const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                document.getElementById('progressFill').style.width = percentage + '%';
+                document.getElementById('progressText').textContent = percentage + '%';
+                log(`Progress: ${percentage}% (${(bytesUploaded / 1024 / 1024).toFixed(2)}/${(bytesTotal / 1024 / 1024).toFixed(2)} MB)`);
+            },
+            onSuccess: function () {
+                log(`Upload complete!`);
+                log(`Upload URL: ${upload.url}`);
+
+                // Extract video ID from URL
+                const uploadId = upload.url.split('/').pop();
+                log(`Video ID: ${uploadId}`);
+                log(`Stream URL: /api/v1/videos/stream/${uploadId}`);
+
+                alert('Upload successful!\n\nCheck the log for details.');
+            }
+        });
+
+        upload.start();
     }
-  </script>
+</script>
 </body>
 </html>
