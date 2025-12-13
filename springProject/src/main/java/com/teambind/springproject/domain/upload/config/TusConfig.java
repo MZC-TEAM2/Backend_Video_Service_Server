@@ -10,29 +10,29 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class TusConfig {
-
-  @Value("${video.upload.temp-path:/tmp/video-temp}")
-  private String tempPath;
-
-  @Value("${video.upload.chunk-size:5242880}")
-  private Long chunkSize;
-
-  @Value("${video.upload.max-file-size:10737418240}")
-  private Long maxFileSize;
-
-  /**
-   * TUS 파일 업로드 서비스 빈 설정.
-   *
-   * @return TusFileUploadService 인스턴스
-   */
-  @Bean
-  public TusFileUploadService tusFileUploadService() {
-    return new TusFileUploadService()
-        .withStoragePath(tempPath)
-        .withDownloadFeature()
-        .withUploadExpirationPeriod(24 * 60 * 60 * 1000L)  // 24시간
-        .withMaxUploadSize(maxFileSize)
-        .withThreadLocalCache(true)
-        .withUploadUri("/api/v1/videos/upload");
-  }
+	
+	@Value("${video.upload.temp-path:/tmp/video-temp}")
+	private String tempPath;
+	
+	@Value("${video.upload.chunk-size:5242880}")
+	private Long chunkSize;
+	
+	@Value("${video.upload.max-file-size:10737418240}")
+	private Long maxFileSize;
+	
+	/**
+	 * TUS 파일 업로드 서비스 빈 설정.
+	 *
+	 * @return TusFileUploadService 인스턴스
+	 */
+	@Bean
+	public TusFileUploadService tusFileUploadService() {
+		return new TusFileUploadService()
+				.withStoragePath(tempPath)
+				.withDownloadFeature()
+				.withUploadExpirationPeriod(24 * 60 * 60 * 1000L)  // 24시간
+				.withMaxUploadSize(maxFileSize)
+				.withThreadLocalCache(true)
+				.withUploadUri("/api/v1/videos/upload");
+	}
 }
