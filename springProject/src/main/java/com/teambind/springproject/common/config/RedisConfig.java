@@ -15,40 +15,40 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  */
 @Configuration
 public class RedisConfig {
-
-  /**
-   * RedisTemplate 빈 설정.
-   * Key는 String, Value는 JSON 직렬화를 사용한다.
-   *
-   * @param connectionFactory Redis 연결 팩토리
-   * @return RedisTemplate 인스턴스
-   */
-  @Bean
-  public RedisTemplate<String, Object> redisTemplate(
-      final RedisConnectionFactory connectionFactory
-  ) {
-    RedisTemplate<String, Object> template = new RedisTemplate<>();
-    template.setConnectionFactory(connectionFactory);
-
-    // Key는 String 직렬화
-    template.setKeySerializer(new StringRedisSerializer());
-    template.setHashKeySerializer(new StringRedisSerializer());
-
-    // Value는 JSON 직렬화 (Java 8 날짜/시간 지원)
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new JavaTimeModule());
-    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    objectMapper.activateDefaultTyping(
-        objectMapper.getPolymorphicTypeValidator(),
-        ObjectMapper.DefaultTyping.NON_FINAL
-    );
-
-    GenericJackson2JsonRedisSerializer jsonSerializer =
-        new GenericJackson2JsonRedisSerializer(objectMapper);
-    template.setValueSerializer(jsonSerializer);
-    template.setHashValueSerializer(jsonSerializer);
-
-    template.afterPropertiesSet();
-    return template;
-  }
+	
+	/**
+	 * RedisTemplate 빈 설정.
+	 * Key는 String, Value는 JSON 직렬화를 사용한다.
+	 *
+	 * @param connectionFactory Redis 연결 팩토리
+	 * @return RedisTemplate 인스턴스
+	 */
+	@Bean
+	public RedisTemplate<String, Object> redisTemplate(
+			final RedisConnectionFactory connectionFactory
+	) {
+		RedisTemplate<String, Object> template = new RedisTemplate<>();
+		template.setConnectionFactory(connectionFactory);
+		
+		// Key는 String 직렬화
+		template.setKeySerializer(new StringRedisSerializer());
+		template.setHashKeySerializer(new StringRedisSerializer());
+		
+		// Value는 JSON 직렬화 (Java 8 날짜/시간 지원)
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		objectMapper.activateDefaultTyping(
+				objectMapper.getPolymorphicTypeValidator(),
+				ObjectMapper.DefaultTyping.NON_FINAL
+		);
+		
+		GenericJackson2JsonRedisSerializer jsonSerializer =
+				new GenericJackson2JsonRedisSerializer(objectMapper);
+		template.setValueSerializer(jsonSerializer);
+		template.setHashValueSerializer(jsonSerializer);
+		
+		template.afterPropertiesSet();
+		return template;
+	}
 }
