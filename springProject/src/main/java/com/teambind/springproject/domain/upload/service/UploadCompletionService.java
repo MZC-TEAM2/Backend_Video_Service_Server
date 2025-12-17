@@ -182,33 +182,40 @@ public class UploadCompletionService {
 	}
 	
 	private void createWeekContent(final VideoUpload upload) {
-		// 스트리밍 URL 생성
-		String contentUrl = buildStreamUrl(upload.getId());
-		
 		// 표시 순서 계산
 		Integer maxOrder = weekContentRepository.findMaxDisplayOrderByWeekId(upload.getWeekId());
 		Integer displayOrder = maxOrder + 1;
-		
-		// WeekContent 생성 및 저장
+
+		// WeekContent 생성 및 저장 (임시 URL로 먼저 저장)
 		WeekContent weekContent = WeekContent.createVideo(
 				upload.getCourseId(),
 				upload.getWeekId(),
 				upload.getTitle(),
-				contentUrl,
+				"",  // 임시 빈 URL
 				upload.getDuration(),
 				displayOrder
 		);
-		
-		weekContentRepository.save(weekContent);
-		log.info("WeekContent 생성: courseId={}, weekId={}, title={}, contentUrl={}",
-				upload.getCourseId(), upload.getWeekId(), upload.getTitle(), contentUrl);
+
+		// 저장하여 contentId 생성
+		WeekContent savedContent = weekContentRepository.save(weekContent);
+
+		// 실제 시청 URL 생성 (contentId, videoId 포함)
+		String watchUrl = buildWatchUrl(savedContent.getId(), upload.getId());
+
+		// URL 업데이트
+		savedContent.updateContentUrl(watchUrl);
+		weekContentRepository.save(savedContent);
+
+		log.info("WeekContent 생성: courseId={}, weekId={}, title={}, watchUrl={}",
+				upload.getCourseId(), upload.getWeekId(), upload.getTitle(), watchUrl);
 	}
-	
-	private String buildStreamUrl(final Long videoUploadId) {
+
+	private String buildWatchUrl(final Long contentId, final Long videoId) {
+		String watchPath = "/watch/" + contentId + "/" + videoId;
 		if (baseUrl != null && !baseUrl.isEmpty()) {
-			return baseUrl + "/api/v1/videos/stream/" + videoUploadId;
+			return baseUrl + watchPath;
 		}
-		return "/api/v1/videos/stream/" + videoUploadId;
+		return watchPath;
 	}
 	
 	private Long extractLongMetadata(final Map<String, String> metadata, final String key) {

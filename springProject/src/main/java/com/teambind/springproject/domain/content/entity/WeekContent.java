@@ -169,4 +169,13 @@ public class WeekContent {
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
+
+	/**
+	 * 콘텐츠 URL을 업데이트한다.
+	 *
+	 * @param contentUrl 새로운 콘텐츠 URL
+	 */
+	public void updateContentUrl(final String contentUrl) {
+		this.contentUrl = contentUrl;
+	}
 }
