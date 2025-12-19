@@ -90,8 +90,9 @@ public class StudentContentProgress {
 	 * @param positionSeconds      현재 시청 위치 (초)
 	 * @param totalDurationSeconds 전체 영상 길이 (초)
 	 * @param completionThreshold  완료 기준 퍼센트 (예: 90)
+	 * @return 이번 호출로 완료 처리가 발생했으면 true
 	 */
-	public void updateProgress(
+	public boolean updateProgress(
 			final Integer positionSeconds,
 			final Integer totalDurationSeconds,
 			final int completionThreshold
@@ -99,18 +100,20 @@ public class StudentContentProgress {
 		this.lastPositionSeconds = positionSeconds;
 		this.lastAccessedAt = LocalDateTime.now();
 		this.accessCount++;
-		
+
 		// 진행률 계산
 		if (totalDurationSeconds > 0) {
 			int newPercentage = (int) ((positionSeconds * 100.0) / totalDurationSeconds);
 			this.progressPercentage = Math.min(Math.max(newPercentage, this.progressPercentage), 100);
 		}
-		
+
 		// 완료 처리
 		if (!this.isCompleted && this.progressPercentage >= completionThreshold) {
 			this.isCompleted = true;
 			this.completedAt = LocalDateTime.now();
+			return true;
 		}
+		return false;
 	}
 	
 	/**
@@ -127,19 +130,22 @@ public class StudentContentProgress {
 	 *
 	 * @param learningRate        학습률 (0-100)
 	 * @param completionThreshold 완료 기준 퍼센트
+	 * @return 이번 호출로 완료 처리가 발생했으면 true
 	 */
-	public void updateLearningRate(final int learningRate, final int completionThreshold) {
+	public boolean updateLearningRate(final int learningRate, final int completionThreshold) {
 		// 학습률이 기존 진행률보다 높을 때만 업데이트
 		if (learningRate > this.progressPercentage) {
 			this.progressPercentage = learningRate;
 		}
 		this.lastAccessedAt = LocalDateTime.now();
-		
+
 		// 완료 처리
 		if (!this.isCompleted && this.progressPercentage >= completionThreshold) {
 			this.isCompleted = true;
 			this.completedAt = LocalDateTime.now();
+			return true;
 		}
+		return false;
 	}
 	
 	// Getters
