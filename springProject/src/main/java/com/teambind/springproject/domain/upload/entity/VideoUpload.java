@@ -17,67 +17,66 @@ import java.time.LocalDateTime;
 		}
 )
 public class VideoUpload {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	@Column(name = "tus_upload_id", nullable = false, unique = true)
 	private String tusUploadId;
-	
+
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
-	
+
 	@Column(name = "original_filename", nullable = false)
 	private String originalFilename;
-	
+
 	@Column(name = "file_size", nullable = false)
 	private Long fileSize;
-	
+
 	@Column(name = "uploaded_bytes", nullable = false)
 	private Long uploadedBytes = 0L;
-	
+
 	@Column(name = "content_type")
 	private String contentType;
-	
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	private UploadStatus status = UploadStatus.IN_PROGRESS;
-	
+
 	@Column(name = "storage_path")
 	private String storagePath;
-	
-	@Column(name = "course_id")
-	private Long courseId;
-	
+
 	@Column(name = "week_id")
 	private Long weekId;
-	
+
 	@Column(name = "title", length = 200)
 	private String title;
-	
+
 	@Column(name = "duration", length = 10)
 	private String duration;
-	
+
+	@Column(name = "content_id")
+	private Long contentId;
+
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
-	
+
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
-	
+
 	@Column(name = "completed_at")
 	private LocalDateTime completedAt;
-	
+
 	protected VideoUpload() {
 	}
-	
+
 	private VideoUpload(
 			final String tusUploadId,
 			final Long userId,
 			final String originalFilename,
 			final Long fileSize,
 			final String contentType,
-			final Long courseId,
 			final Long weekId,
 			final String title
 	) {
@@ -86,7 +85,6 @@ public class VideoUpload {
 		this.originalFilename = originalFilename;
 		this.fileSize = fileSize;
 		this.contentType = contentType;
-		this.courseId = courseId;
 		this.weekId = weekId;
 		this.title = title;
 		this.uploadedBytes = 0L;
@@ -94,7 +92,7 @@ public class VideoUpload {
 		this.createdAt = LocalDateTime.now();
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 새로운 업로드를 생성한다.
 	 *
@@ -103,7 +101,6 @@ public class VideoUpload {
 	 * @param originalFilename 원본 파일명
 	 * @param fileSize         파일 크기
 	 * @param contentType      콘텐츠 타입
-	 * @param courseId         강의 ID
 	 * @param weekId           주차 ID
 	 * @param title            콘텐츠 제목
 	 * @return VideoUpload 인스턴스
@@ -114,14 +111,13 @@ public class VideoUpload {
 			final String originalFilename,
 			final Long fileSize,
 			final String contentType,
-			final Long courseId,
 			final Long weekId,
 			final String title
 	) {
 		return new VideoUpload(tusUploadId, userId, originalFilename, fileSize, contentType,
-				courseId, weekId, title);
+				weekId, title);
 	}
-	
+
 	/**
 	 * 업로드 진행 상황을 업데이트한다.
 	 *
@@ -131,7 +127,7 @@ public class VideoUpload {
 		this.uploadedBytes = uploadedBytes;
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 업로드를 완료 처리한다.
 	 *
@@ -144,7 +140,7 @@ public class VideoUpload {
 		this.completedAt = LocalDateTime.now();
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 업로드를 취소한다.
 	 */
@@ -152,7 +148,7 @@ public class VideoUpload {
 		this.status = UploadStatus.CANCELLED;
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 업로드를 실패 처리한다.
 	 */
@@ -160,7 +156,7 @@ public class VideoUpload {
 		this.status = UploadStatus.FAILED;
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 업로드 진행률을 계산한다.
 	 *
@@ -172,7 +168,7 @@ public class VideoUpload {
 		}
 		return (int) ((uploadedBytes * 100) / fileSize);
 	}
-	
+
 	/**
 	 * 업로드가 진행 중인지 확인한다.
 	 *
@@ -181,60 +177,60 @@ public class VideoUpload {
 	public boolean isInProgress() {
 		return status == UploadStatus.IN_PROGRESS;
 	}
-	
+
 	// Getters
 	public Long getId() {
 		return id;
 	}
-	
+
 	public String getTusUploadId() {
 		return tusUploadId;
 	}
-	
+
 	public Long getUserId() {
 		return userId;
 	}
-	
+
 	public String getOriginalFilename() {
 		return originalFilename;
 	}
-	
+
 	public Long getFileSize() {
 		return fileSize;
 	}
-	
+
 	public Long getUploadedBytes() {
 		return uploadedBytes;
 	}
-	
+
 	public String getContentType() {
 		return contentType;
 	}
-	
+
 	public UploadStatus getStatus() {
 		return status;
 	}
-	
+
 	public String getStoragePath() {
 		return storagePath;
 	}
-	
-	public Long getCourseId() {
-		return courseId;
-	}
-	
+
 	public Long getWeekId() {
 		return weekId;
 	}
-	
+
 	public String getTitle() {
 		return title;
 	}
-	
+
 	public String getDuration() {
 		return duration;
 	}
-	
+
+	public Long getContentId() {
+		return contentId;
+	}
+
 	/**
 	 * 동영상 길이를 설정한다.
 	 *
@@ -244,15 +240,25 @@ public class VideoUpload {
 		this.duration = duration;
 		this.updatedAt = LocalDateTime.now();
 	}
-	
+
+	/**
+	 * week_contents의 ID를 설정한다.
+	 *
+	 * @param contentId week_contents ID
+	 */
+	public void setContentId(final Long contentId) {
+		this.contentId = contentId;
+		this.updatedAt = LocalDateTime.now();
+	}
+
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
-	
+
 	public LocalDateTime getUpdatedAt() {
 		return updatedAt;
 	}
-	
+
 	public LocalDateTime getCompletedAt() {
 		return completedAt;
 	}

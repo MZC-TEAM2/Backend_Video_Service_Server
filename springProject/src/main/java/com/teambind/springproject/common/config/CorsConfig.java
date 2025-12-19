@@ -28,6 +28,18 @@ public class CorsConfig {
 		
 		// 자격 증명 허용 (쿠키, 인증 헤더 등)
 		config.setAllowCredentials(true);
+
+		// 클라이언트가 읽을 수 있는 응답 헤더 (TUS 업로드용)
+		config.addExposedHeader("Location");
+		config.addExposedHeader("Upload-Offset");
+		config.addExposedHeader("Upload-Length");
+		config.addExposedHeader("Tus-Version");
+		config.addExposedHeader("Tus-Resumable");
+		config.addExposedHeader("Tus-Max-Size");
+		config.addExposedHeader("Tus-Extension");
+		config.addExposedHeader("X-Watch-URL");
+		config.addExposedHeader("X-Video-Id");
+		config.addExposedHeader("X-Content-Id");
 		
 		// 캐시 시간 (초)
 		config.setMaxAge(3600L);
