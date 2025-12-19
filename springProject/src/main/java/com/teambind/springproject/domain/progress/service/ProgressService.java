@@ -4,6 +4,7 @@ import com.teambind.springproject.domain.learning.service.LearningRateService;
 import com.teambind.springproject.domain.progress.dto.ProgressReportRequest;
 import com.teambind.springproject.domain.progress.dto.ProgressResponse;
 import com.teambind.springproject.domain.progress.entity.StudentContentProgress;
+import com.teambind.springproject.domain.progress.event.ContentCompletedPublisher;
 import com.teambind.springproject.domain.progress.repository.StudentContentProgressRepository;
 import com.teambind.springproject.domain.session.entity.WatchSession;
 import com.teambind.springproject.domain.session.repository.WatchSessionRepository;
@@ -22,19 +23,22 @@ public class ProgressService {
 	private final StudentContentProgressRepository progressRepository;
 	private final WatchSessionRepository sessionRepository;
 	private final LearningRateService learningRateService;
+	private final ContentCompletedPublisher contentCompletedPublisher;
 	private final int completionThreshold;
 	private final long sessionTimeoutSeconds;
-	
+
 	public ProgressService(
 			final StudentContentProgressRepository progressRepository,
 			final WatchSessionRepository sessionRepository,
 			final LearningRateService learningRateService,
+			final ContentCompletedPublisher contentCompletedPublisher,
 			@Value("${learning.completion-threshold:90}") final int completionThreshold,
 			@Value("${watch.session.timeout-seconds:30}") final long sessionTimeoutSeconds
 	) {
 		this.progressRepository = progressRepository;
 		this.sessionRepository = sessionRepository;
 		this.learningRateService = learningRateService;
+		this.contentCompletedPublisher = contentCompletedPublisher;
 		this.completionThreshold = completionThreshold;
 		this.sessionTimeoutSeconds = sessionTimeoutSeconds;
 	}
@@ -65,14 +69,23 @@ public class ProgressService {
 				request.contentId(),
 				session.getUserId()
 		);
-		
-		progress.updateProgress(
+
+		boolean justCompleted = progress.updateProgress(
 				request.currentPositionSeconds(),
 				request.totalDurationSeconds(),
 				completionThreshold
 		);
-		
+
 		progressRepository.save(progress);
+
+		// 완료 이벤트 발행
+		if (justCompleted) {
+			contentCompletedPublisher.publish(
+					session.getUserId(),
+					request.contentId(),
+					progress.getCompletedAt()
+			);
+		}
 		
 		// 학습률 기반 진행률 업데이트 (부정 시청 제외)
 		learningRateService.calculateAndUpdateLearningRate(
