@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_NAME}?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  data:
+    redis:
+      repositories:
+        enabled: false
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+  servlet:
+    multipart:
+      max-file-size: 10GB
+      max-request-size: 10GB
+
+  sql:
+    init:
+      mode: never
+
+# Video Upload Configuration
+video:
+  upload:
+    storage-path: ${VIDEO_STORAGE_PATH:/tmp/video-uploads}
+    temp-path: ${VIDEO_TEMP_PATH:/tmp/video-temp}
+    allowed-extensions: mp4,webm,avi,mov,mkv
+    chunk-size: 5242880  # 5MB
+    max-file-size: 10737418240  # 10GB
+
+# Watch Session Configuration
+watch:
+  session:
+    timeout-seconds: 30
+    progress-interval-seconds: 5
+
+# Learning Progress Configuration
+learning:
+  completion-threshold: 90  # 90% watched = completed
+  skip-tolerance-seconds: 5  # 5 seconds skip is allowed
+
+logging:
+  level:
+    root: INFO
+    com.teambind: DEBUG

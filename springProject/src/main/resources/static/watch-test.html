@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Watch Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, button {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 200px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        button.success {
+            background: #28a745;
+        }
+
+        button.success:hover {
+            background: #218838;
+        }
+
+        #videoContainer {
+            margin-top: 20px;
+        }
+
+        video {
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+        }
+
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        #sessionInfo {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 4px;
+        }
+
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<h1>Video Watch Test</h1>
+
+<div class="warning" id="multiTabWarning" style="display:none;">
+    Warning: Another tab/window is already playing. Your session was terminated.
+</div>
+
+<div id="controlPanel">
+    <div class="form-group">
+        <label>User ID:</label>
+        <input id="userId" type="number" value="1"/>
+    </div>
+
+    <div class="form-group">
+        <label>Content ID (week_contents.id):</label>
+        <input id="contentId" type="number" value="1"/>
+    </div>
+
+    <div class="form-group">
+        <label>Video Upload ID:</label>
+        <input id="videoId" type="number" value="1"/>
+    </div>
+
+    <div class="form-group">
+        <label>Video Duration (seconds):</label>
+        <input id="totalDuration" type="number" value="120"/>
+    </div>
+
+    <div>
+        <button class="success" onclick="startSession()">Start Session</button>
+        <button class="danger" onclick="endSession()">End Session</button>
+        <button onclick="checkActiveSession()">Check Active Session</button>
+    </div>
+
+    <div id="sessionInfo" style="display:none;">
+        <strong>Session ID:</strong> <span id="currentSessionId">-</span><br>
+        <strong>Status:</strong> <span id="sessionStatus">-</span><br>
+        <strong>Progress:</strong> <span id="sessionProgress">0</span>%
+    </div>
+</div>
+
+<div id="videoContainer" style="display:none;">
+    <video controls id="videoPlayer">
+        <source id="videoSource" src="" type="video/mp4">
+    </video>
+</div>
+
+<div id="log"></div>
+
+<script>
+    let currentSessionId = null;
+    let progressInterval = null;
+    let lastPosition = 0;
+
+    // URL 파라미터 파싱
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramUserId = urlParams.get('userId');
+    const paramContentId = urlParams.get('contentId');
+    const paramVideoId = urlParams.get('videoId');
+
+    // 파라미터가 있으면 자동 입력
+    const isEmbedMode = paramUserId && paramContentId && paramVideoId;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (paramUserId) document.getElementById('userId').value = paramUserId;
+        if (paramContentId) document.getElementById('contentId').value = paramContentId;
+        if (paramVideoId) document.getElementById('videoId').value = paramVideoId;
+
+        // 모든 파라미터가 있으면 자동 시작 + UI 숨기기
+        if (isEmbedMode) {
+            // 컨트롤 패널, 제목, 로그 숨기기
+            document.querySelector('h1').style.display = 'none';
+            document.getElementById('controlPanel').style.display = 'none';
+            document.getElementById('log').style.display = 'none';
+            document.getElementById('multiTabWarning').style.display = 'none';
+
+            // 영상 컨테이너 전체 너비로
+            document.getElementById('videoContainer').style.marginTop = '0';
+            document.getElementById('videoPlayer').style.maxWidth = '100%';
+            document.body.style.padding = '0';
+            document.body.style.margin = '0';
+            document.body.style.maxWidth = '100%';
+
+            startSession();
+        }
+    });
+
+    function log(message) {
+        const logDiv = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        logDiv.innerHTML = `[${time}] ${message}<br>` + logDiv.innerHTML;
+        console.log(message);
+    }
+
+    async function startSession() {
+        const userId = document.getElementById('userId').value;
+        const contentId = document.getElementById('contentId').value;
+        const videoId = document.getElementById('videoId').value;
+        const totalDuration = document.getElementById('totalDuration').value;
+
+        try {
+            const response = await fetch('/api/v1/sessions', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    userId: parseInt(userId),
+                    contentId: parseInt(contentId),
+                    totalDuration: parseInt(totalDuration)
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(error);
+            }
+
+            const session = await response.json();
+            currentSessionId = session.sessionId;
+
+            document.getElementById('currentSessionId').textContent = session.sessionId;
+            document.getElementById('sessionStatus').textContent = session.status;
+            document.getElementById('sessionProgress').textContent = session.lastPositionSeconds || 0;
+            if (!isEmbedMode) {
+                document.getElementById('sessionInfo').style.display = 'block';
+            }
+            document.getElementById('multiTabWarning').style.display = 'none';
+
+            // Load video
+            const videoSource = document.getElementById('videoSource');
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoSource.src = `/api/v1/videos/stream/${videoId}`;
+            videoPlayer.load();
+            document.getElementById('videoContainer').style.display = 'block';
+
+            // 비디오 메타데이터 로드 후 실제 duration 설정
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                const actualDuration = Math.floor(videoPlayer.duration);
+                document.getElementById('totalDuration').value = actualDuration;
+                log(`Video duration detected: ${actualDuration}s`);
+            }, {once: true});
+
+            // Start progress reporting
+            startProgressReporting();
+
+            log(`Session started: ${session.sessionId}`);
+        } catch (error) {
+            log(`ERROR: ${error.message}`);
+            alert('Failed to start session: ' + error.message);
+        }
+    }
+
+    async function endSession() {
+        if (!currentSessionId) {
+            alert('No active session');
+            return;
+        }
+
+        const userId = document.getElementById('userId').value;
+
+        try {
+            const response = await fetch(`/api/v1/sessions/${currentSessionId}?userId=${userId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to end session');
+            }
+
+            stopProgressReporting();
+            document.getElementById('sessionStatus').textContent = 'ENDED';
+            document.getElementById('videoPlayer').pause();
+
+            log(`Session ended: ${currentSessionId}`);
+            currentSessionId = null;
+        } catch (error) {
+            log(`ERROR: ${error.message}`);
+        }
+    }
+
+    async function checkActiveSession() {
+        const userId = document.getElementById('userId').value;
+
+        try {
+            const response = await fetch(`/api/v1/sessions/active?userId=${userId}`);
+
+            if (response.status === 404) {
+                log('No active session found');
+                document.getElementById('sessionInfo').style.display = 'none';
+                return;
+            }
+
+            const session = await response.json();
+            document.getElementById('currentSessionId').textContent = session.sessionId;
+            document.getElementById('sessionStatus').textContent = session.status;
+            document.getElementById('sessionProgress').textContent = session.lastPositionSeconds || 0;
+            document.getElementById('sessionInfo').style.display = 'block';
+
+            currentSessionId = session.sessionId;
+            log(`Active session found: ${session.sessionId}`);
+        } catch (error) {
+            log(`ERROR: ${error.message}`);
+        }
+    }
+
+    function startProgressReporting() {
+        stopProgressReporting();
+
+        const video = document.getElementById('videoPlayer');
+        const contentId = document.getElementById('contentId').value;
+
+        // Report progress every 5 seconds
+        progressInterval = setInterval(async () => {
+            if (!currentSessionId) return;
+
+            const currentPosition = Math.floor(video.currentTime);
+            if (currentPosition === lastPosition) return;
+
+            // 비디오의 실제 duration 사용 (NaN이면 입력값 사용)
+            let totalDuration = Math.floor(video.duration);
+            if (isNaN(totalDuration) || totalDuration <= 0) {
+                totalDuration = parseInt(document.getElementById('totalDuration').value);
+            }
+
+            try {
+                const response = await fetch('/api/v1/progress', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        contentId: parseInt(contentId),
+                        currentPositionSeconds: currentPosition,
+                        totalDurationSeconds: totalDuration
+                    })
+                });
+
+                if (response.ok) {
+                    const progress = await response.json();
+                    document.getElementById('sessionProgress').textContent = progress.progressPercentage || 0;
+                    log(`Progress reported: ${currentPosition}s / ${totalDuration}s (${progress.progressPercentage}%)`);
+                }
+
+                lastPosition = currentPosition;
+            } catch (error) {
+                log(`Progress report error: ${error.message}`);
+            }
+        }, 5000);
+
+        // Send watch events
+        video.addEventListener('play', () => sendWatchEvent('PLAY', video.currentTime));
+        video.addEventListener('pause', () => sendWatchEvent('PAUSE', video.currentTime));
+        video.addEventListener('seeked', () => sendWatchEvent('SEEK', video.currentTime));
+        video.addEventListener('ratechange', () => sendWatchEvent('RATE_CHANGE', video.currentTime, video.playbackRate));
+
+        // Detect tab visibility
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                sendWatchEvent('VISIBILITY_HIDDEN', video.currentTime);
+            } else {
+                sendWatchEvent('VISIBILITY_VISIBLE', video.currentTime);
+            }
+        });
+    }
+
+    function stopProgressReporting() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+
+    async function sendWatchEvent(eventType, position, rate = null) {
+        if (!currentSessionId) return;
+
+        try {
+            const body = {
+                sessionId: currentSessionId,
+                eventType: eventType,
+                timestamp: new Date().toISOString(),
+                payload: {
+                    positionSeconds: Math.floor(position)
+                }
+            };
+
+            if (rate !== null) {
+                body.payload.rate = rate;
+            }
+
+            await fetch('/api/v1/watch-events', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+
+            log(`Event sent: ${eventType} at ${Math.floor(position)}s`);
+        } catch (error) {
+            log(`Event error: ${error.message}`);
+        }
+    }
+
+    // Handle page unload
+    window.addEventListener('beforeunload', () => {
+        if (currentSessionId) {
+            const userId = document.getElementById('userId').value;
+            navigator.sendBeacon(`/api/v1/sessions/${currentSessionId}?userId=${userId}`, '');
+        }
+    });
+</script>
+</body>
+</html>
