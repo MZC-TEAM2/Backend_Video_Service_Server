@@ -19,6 +19,7 @@ public class CorsConfig {
 		// 허용할 Origin
 		config.addAllowedOrigin("http://localhost:5173"); // React Vite
 		config.addAllowedOrigin("http://localhost:3000"); // React CRA
+		config.addAllowedOrigin("http://localhost:8090"); // Video Server (watch-test)
 		
 		// 허용할 HTTP 메서드
 		config.addAllowedMethod("*");
