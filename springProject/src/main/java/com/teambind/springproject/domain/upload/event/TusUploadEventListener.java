@@ -11,9 +11,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
  */
 @Component
 public class TusUploadEventListener implements HandlerInterceptor {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(TusUploadEventListener.class);
-
+	
 	public TusUploadEventListener() {
 	}
 }
