@@ -26,7 +26,7 @@ public class ProgressService {
 	private final ContentCompletedPublisher contentCompletedPublisher;
 	private final int completionThreshold;
 	private final long sessionTimeoutSeconds;
-
+	
 	public ProgressService(
 			final StudentContentProgressRepository progressRepository,
 			final WatchSessionRepository sessionRepository,
@@ -69,15 +69,15 @@ public class ProgressService {
 				request.contentId(),
 				session.getUserId()
 		);
-
+		
 		boolean justCompleted = progress.updateProgress(
 				request.currentPositionSeconds(),
 				request.totalDurationSeconds(),
 				completionThreshold
 		);
-
+		
 		progressRepository.save(progress);
-
+		
 		// 완료 이벤트 발행
 		if (justCompleted) {
 			contentCompletedPublisher.publish(

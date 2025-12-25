@@ -16,36 +16,36 @@ import java.time.LocalDateTime;
 		}
 )
 public class WeekContent {
-
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
+	
 	@Column(name = "week_id", nullable = false)
 	private Long weekId;
-
+	
 	@Enumerated(EnumType.STRING)
 	@Column(name = "content_type", nullable = false, length = 20)
 	private ContentType contentType;
-
+	
 	@Column(name = "title", nullable = false, length = 200)
 	private String title;
-
+	
 	@Column(name = "content_url", nullable = false, length = 500)
 	private String contentUrl;
-
+	
 	@Column(name = "duration", length = 10)
 	private String duration;
-
+	
 	@Column(name = "display_order", nullable = false)
 	private Integer displayOrder;
-
+	
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
-
+	
 	protected WeekContent() {
 	}
-
+	
 	private WeekContent(
 			final Long weekId,
 			final ContentType contentType,
@@ -62,7 +62,7 @@ public class WeekContent {
 		this.displayOrder = displayOrder;
 		this.createdAt = LocalDateTime.now();
 	}
-
+	
 	/**
 	 * 비디오 콘텐츠를 생성한다.
 	 *
@@ -82,7 +82,7 @@ public class WeekContent {
 	) {
 		return new WeekContent(weekId, ContentType.VIDEO, title, contentUrl, duration, displayOrder);
 	}
-
+	
 	/**
 	 * 문서 콘텐츠를 생성한다.
 	 *
@@ -100,7 +100,7 @@ public class WeekContent {
 	) {
 		return new WeekContent(weekId, ContentType.DOCUMENT, title, contentUrl, null, displayOrder);
 	}
-
+	
 	/**
 	 * 링크 콘텐츠를 생성한다.
 	 *
@@ -118,40 +118,40 @@ public class WeekContent {
 	) {
 		return new WeekContent(weekId, ContentType.LINK, title, contentUrl, null, displayOrder);
 	}
-
+	
 	// Getters
 	public Long getId() {
 		return id;
 	}
-
+	
 	public Long getWeekId() {
 		return weekId;
 	}
-
+	
 	public ContentType getContentType() {
 		return contentType;
 	}
-
+	
 	public String getTitle() {
 		return title;
 	}
-
+	
 	public String getContentUrl() {
 		return contentUrl;
 	}
-
+	
 	public String getDuration() {
 		return duration;
 	}
-
+	
 	public Integer getDisplayOrder() {
 		return displayOrder;
 	}
-
+	
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
-
+	
 	/**
 	 * 콘텐츠 URL을 업데이트한다.
 	 *

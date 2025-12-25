@@ -100,13 +100,13 @@ public class StudentContentProgress {
 		this.lastPositionSeconds = positionSeconds;
 		this.lastAccessedAt = LocalDateTime.now();
 		this.accessCount++;
-
+		
 		// 진행률 계산
 		if (totalDurationSeconds > 0) {
 			int newPercentage = (int) ((positionSeconds * 100.0) / totalDurationSeconds);
 			this.progressPercentage = Math.min(Math.max(newPercentage, this.progressPercentage), 100);
 		}
-
+		
 		// 완료 처리
 		if (!this.isCompleted && this.progressPercentage >= completionThreshold) {
 			this.isCompleted = true;
@@ -138,7 +138,7 @@ public class StudentContentProgress {
 			this.progressPercentage = learningRate;
 		}
 		this.lastAccessedAt = LocalDateTime.now();
-
+		
 		// 완료 처리
 		if (!this.isCompleted && this.progressPercentage >= completionThreshold) {
 			this.isCompleted = true;

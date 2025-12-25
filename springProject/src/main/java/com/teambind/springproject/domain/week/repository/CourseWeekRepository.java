@@ -9,7 +9,7 @@ import java.util.Optional;
  * 강좌 주차 리포지토리 (읽기 전용).
  */
 public interface CourseWeekRepository extends JpaRepository<CourseWeek, Long> {
-
+	
 	/**
 	 * 주차 ID로 강좌 주차를 조회한다.
 	 *

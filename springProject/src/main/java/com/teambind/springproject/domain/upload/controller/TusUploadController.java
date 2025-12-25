@@ -23,12 +23,12 @@ import java.io.IOException;
 		}
 )
 public class TusUploadController {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(TusUploadController.class);
-
+	
 	private final TusFileUploadService tusService;
 	private final UploadCompletionService completionService;
-
+	
 	public TusUploadController(
 			final TusFileUploadService tusService,
 			final UploadCompletionService completionService
@@ -36,7 +36,7 @@ public class TusUploadController {
 		this.tusService = tusService;
 		this.completionService = completionService;
 	}
-
+	
 	/**
 	 * TUS OPTIONS 요청 처리.
 	 * 클라이언트가 서버의 TUS 지원 여부와 확장 기능을 확인한다.
@@ -49,7 +49,7 @@ public class TusUploadController {
 		tusService.process(request, response);
 		log.debug("TUS OPTIONS 요청 처리");
 	}
-
+	
 	/**
 	 * TUS POST 요청 처리.
 	 * 새로운 업로드를 생성하고 week_contents를 미리 생성한다.
@@ -62,7 +62,7 @@ public class TusUploadController {
 	) throws IOException {
 		// TUS 처리
 		tusService.process(request, response);
-
+		
 		// 201 Created 응답인 경우에만 week_contents 생성
 		if (response.getStatus() == 201) {
 			try {
@@ -76,11 +76,11 @@ public class TusUploadController {
 							uploadUri = location.substring(pathStart);
 						}
 					}
-
+					
 					// 메타데이터 저장 및 week_contents 생성
 					UploadCompletionService.UploadResult result =
 							completionService.saveUploadMetadataAndCreateContent(uploadUri, 1L);
-
+					
 					// 응답 헤더에 watchUrl 추가
 					if (result.getWatchUrl() != null) {
 						response.setHeader("X-Watch-URL", result.getWatchUrl());
@@ -93,10 +93,10 @@ public class TusUploadController {
 				log.error("week_contents 생성 실패: {}", e.getMessage(), e);
 			}
 		}
-
+		
 		log.info("TUS POST 요청 처리: Upload-Length={}", uploadLength);
 	}
-
+	
 	/**
 	 * TUS HEAD 요청 처리.
 	 * 업로드 상태를 조회한다.
@@ -109,7 +109,7 @@ public class TusUploadController {
 		tusService.process(request, response);
 		log.debug("TUS HEAD 요청 처리: {}", request.getRequestURI());
 	}
-
+	
 	/**
 	 * TUS PATCH 요청 처리.
 	 * 청크 데이터를 업로드한다.
@@ -121,7 +121,7 @@ public class TusUploadController {
 			@RequestHeader(value = "Upload-Offset", required = false) final Long uploadOffset
 	) throws IOException {
 		tusService.process(request, response);
-
+		
 		// 업로드 완료 체크 및 처리
 		if (response.getStatus() == 204) {
 			try {
@@ -131,10 +131,10 @@ public class TusUploadController {
 				log.error("업로드 진행 처리 실패: {}", e.getMessage(), e);
 			}
 		}
-
+		
 		log.debug("TUS PATCH 요청 처리: Upload-Offset={}", uploadOffset);
 	}
-
+	
 	/**
 	 * TUS DELETE 요청 처리.
 	 * 업로드를 취소한다.

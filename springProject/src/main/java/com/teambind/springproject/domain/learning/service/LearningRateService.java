@@ -20,12 +20,12 @@ import java.util.Optional;
 public class LearningRateService {
 	
 	private static final Logger log = LoggerFactory.getLogger(LearningRateService.class);
-
+	
 	private final WatchedSegmentRepository segmentRepository;
 	private final StudentContentProgressRepository progressRepository;
 	private final ContentCompletedPublisher contentCompletedPublisher;
 	private final int completionThreshold;
-
+	
 	public LearningRateService(
 			final WatchedSegmentRepository segmentRepository,
 			final StudentContentProgressRepository progressRepository,
@@ -139,24 +139,24 @@ public class LearningRateService {
 	) {
 		Optional<StudentContentProgress> progressOpt =
 				progressRepository.findByContentIdAndStudentId(contentId, userId);
-
+		
 		if (progressOpt.isEmpty()) {
 			log.debug("진행 기록 없음: userId={}, contentId={}", userId, contentId);
 			return;
 		}
-
+		
 		StudentContentProgress progress = progressOpt.get();
-
+		
 		// 학습률 기반으로 진행률 업데이트
 		boolean justCompleted = progress.updateLearningRate(learningRate, completionThreshold);
-
+		
 		progressRepository.save(progress);
-
+		
 		// 완료 이벤트 발행
 		if (justCompleted) {
 			contentCompletedPublisher.publish(userId, contentId, progress.getCompletedAt());
 		}
-
+		
 		log.debug("진행 상황 업데이트: userId={}, contentId={}, rate={}%, completed={}",
 				userId, contentId, learningRate, progress.getIsCompleted());
 	}
