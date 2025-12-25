@@ -12,7 +12,7 @@ import org.springframework.web.servlet.view.RedirectView;
  */
 @Controller
 public class WatchPageController {
-
+	
 	/**
 	 * 영상 시청 페이지로 리다이렉트.
 	 *
