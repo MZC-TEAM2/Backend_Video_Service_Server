@@ -13,7 +13,7 @@ public record ContentCompletedEvent(
 		Long courseId,
 		LocalDateTime completedAt
 ) {
-
+	
 	public static ContentCompletedEvent of(
 			final Long studentId,
 			final Long contentId,
