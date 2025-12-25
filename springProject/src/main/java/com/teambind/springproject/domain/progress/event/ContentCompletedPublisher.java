@@ -17,15 +17,15 @@ import java.time.LocalDateTime;
  */
 @Service
 public class ContentCompletedPublisher {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(ContentCompletedPublisher.class);
 	private static final String CHANNEL = "attendance:content-completed";
-
+	
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final WeekContentRepository weekContentRepository;
 	private final CourseWeekRepository courseWeekRepository;
 	private final ObjectMapper objectMapper;
-
+	
 	public ContentCompletedPublisher(
 			final RedisTemplate<String, Object> redisTemplate,
 			final WeekContentRepository weekContentRepository,
@@ -37,7 +37,7 @@ public class ContentCompletedPublisher {
 		this.courseWeekRepository = courseWeekRepository;
 		this.objectMapper = objectMapper;
 	}
-
+	
 	/**
 	 * 콘텐츠 학습 완료 이벤트를 발행한다.
 	 *
@@ -55,22 +55,22 @@ public class ContentCompletedPublisher {
 			Long weekId = weekContentRepository.findById(contentId)
 					.map(content -> content.getWeekId())
 					.orElse(null);
-
+			
 			if (weekId == null) {
 				log.warn("콘텐츠를 찾을 수 없습니다: contentId={}", contentId);
 				return;
 			}
-
+			
 			// courseId 조회
 			Long courseId = courseWeekRepository.findById(weekId)
 					.map(week -> week.getCourseId())
 					.orElse(null);
-
+			
 			if (courseId == null) {
 				log.warn("주차를 찾을 수 없습니다: weekId={}", weekId);
 				return;
 			}
-
+			
 			// 이벤트 생성 및 발행
 			ContentCompletedEvent event = ContentCompletedEvent.of(
 					studentId,
@@ -79,13 +79,13 @@ public class ContentCompletedPublisher {
 					courseId,
 					completedAt
 			);
-
+			
 			String message = objectMapper.writeValueAsString(event);
 			redisTemplate.convertAndSend(CHANNEL, message);
-
+			
 			log.info("콘텐츠 완료 이벤트 발행: channel={}, studentId={}, contentId={}, weekId={}, courseId={}",
 					CHANNEL, studentId, contentId, weekId, courseId);
-
+			
 		} catch (JsonProcessingException e) {
 			log.error("이벤트 직렬화 실패: studentId={}, contentId={}", studentId, contentId, e);
 		} catch (Exception e) {
